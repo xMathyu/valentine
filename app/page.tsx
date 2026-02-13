@@ -26,6 +26,7 @@ export default function Home() {
   const [noPosition, setNoPosition] = useState({ x: 0, y: 0 });
   const [isRandomPosition, setIsRandomPosition] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const noTapCooldown = useRef(false);
   const [confetti, setConfetti] = useState<
     { id: number; x: number; delay: number; color: string; size: number }[]
   >([]);
@@ -41,6 +42,11 @@ export default function Home() {
     setNoPosition({ x: newX, y: newY });
     setIsRandomPosition(true);
     setNoCount((prev) => Math.min(prev + 1, noMessages.length - 1));
+    // Block "Yes" from firing for a short window after "No" is tapped
+    noTapCooldown.current = true;
+    setTimeout(() => {
+      noTapCooldown.current = false;
+    }, 400);
   }, []);
 
   const handleYes = useCallback(() => {
@@ -138,7 +144,15 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row items-center gap-4 mt-4 relative">
               <button
-                onClick={handleYes}
+                onClick={() => {
+                  if (!noTapCooldown.current) handleYes();
+                }}
+                onTouchEnd={(e) => {
+                  if (noTapCooldown.current) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
                 className="rounded-full font-bold text-white shadow-lg shadow-pink-500/50 transition-all duration-300 hover:shadow-pink-500/80 hover:brightness-110 active:scale-95"
                 style={{
                   fontSize: `${Math.min(1.2 + noCount * 0.15, 2.5)}rem`,
